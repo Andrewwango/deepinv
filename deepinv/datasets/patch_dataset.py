@@ -4,6 +4,7 @@ from deepinv.utils.decorators import _deprecated_alias
 from deepinv.utils.io_utils import load_np
 
 import os
+import random
 
 class PatchDataset(ImageDataset):
     r"""
@@ -84,3 +85,23 @@ class PatchDataset3D(ImageDataset):
         iw  = rem %  self.patches_per_image_w
 
         return load_np(fpath, start_coords=[id * self.stride, ih * self.stride, iw * self.stride], patch_size=self.patch_size)
+    
+
+class AlternativePatchDataset3D(ImageDataset):
+    def __init__(self, im_dir, patch_size=64):
+        self.patch_size = patch_size
+        self.im_dir = im_dir
+
+        self.imgs = os.listdir(im_dir) # add a check here to ensure only nifti and/or npy files are included?
+        self.shapes = [load_np(os.path.join(im_dir, im), as_memmap=True).shape for im in self.imgs]
+
+
+    def __len__(self):
+        return len(self.imgs)
+
+    def __getitem__(self, idx):
+        fpath = os.path.join(self.im_dir, self.imgs[idx])
+        shape = self.shapes[idx]
+
+
+        return load_np(fpath, start_coords=[random.randint(self.patch_size, shape[0] - self.patch_size), random.randint(self.patch_size, shape[1] - self.patch_size), random.randint(self.patch_size, shape[2] - self.patch_size)], patch_size=self.patch_size)
