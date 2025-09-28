@@ -84,7 +84,7 @@ class PatchDataset3D(ImageDataset):
         ih  = rem // self.patches_per_image_w
         iw  = rem %  self.patches_per_image_w
 
-        return load_np(fpath, start_coords=[id * self.stride, ih * self.stride, iw * self.stride], patch_size=self.patch_size)
+        return load_np(fpath, start_coords=[id * self.stride, ih * self.stride, iw * self.stride], patch_size=self.patch_size).unsqueeze(0)
     
 
 class AlternativePatchDataset3D(ImageDataset):
@@ -104,4 +104,4 @@ class AlternativePatchDataset3D(ImageDataset):
         shape = self.shapes[idx]
 
         # We use random here: need to make a fix for deterministic behaviour based on seed --> seed worker function, see torch reproducibility page
-        return load_np(fpath, start_coords=[random.randint(self.patch_size, shape[0] - self.patch_size), random.randint(self.patch_size, shape[1] - self.patch_size), random.randint(self.patch_size, shape[2] - self.patch_size)], patch_size=self.patch_size)
+        return load_np(fpath, start_coords=[random.randint(self.patch_size, shape[0] - self.patch_size), random.randint(self.patch_size, shape[1] - self.patch_size), random.randint(self.patch_size, shape[2] - self.patch_size)], patch_size=self.patch_size).unsqueeze(0)

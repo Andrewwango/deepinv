@@ -892,6 +892,24 @@ class SaltPepperNoise(NoiseModel):
         return y
 
 
+class RicianNoise(NoiseModel):
+    def __init__(
+        self,
+        sigma: Union[float, torch.Tensor] = 0.1,
+        rng: Optional[torch.Generator] = None,
+    ):
+        device = _infer_device([sigma, rng])
+        super().__init__(rng=rng)
+        sigma = self._float_to_tensor(sigma)
+        sigma = sigma.to(device)
+        self.register_buffer("sigma", sigma)
+
+    def forward(self, x, sigma=None):
+        self.update_parameters(sigma=sigma)
+        N1 = self.randn_like(x)
+        N2 = self.randn_like(x)
+        return torch.sqrt((self.sigma * N1 + x)**2 + (self.sigma * N2)**2)
+
 def _infer_device(
     device_held_candidates: Iterable, *, default: torch.device = torch.device("cpu")
 ) -> torch.device:
