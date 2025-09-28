@@ -37,6 +37,4 @@ if __name__ == '__main__':
         online_measurements=True
     )
 
-    trainer.save_folder_im = './test_run'
-
     trainer.train()
