@@ -1,6 +1,9 @@
 from deepinv.datasets.base import ImageDataset
 from deepinv.utils.decorators import _deprecated_alias
 
+from deepinv.utils.io_utils import load_npy
+
+import os
 
 class PatchDataset(ImageDataset):
     r"""
@@ -43,3 +46,16 @@ class PatchDataset(ImageDataset):
             patch = self.transform(patch)
 
         return patch.reshape(self.shape) if self.shape else patch
+
+
+'''class PatchDataset3D(ImageDataset):
+    def __init__(self, im_dir, patch_size=64, stride=32):
+        self.patch_size = patch_size
+        self.stride = stride
+        self.im_dir = im_dir
+
+        self.imgs = os.listdir(im_dir) # add a check here to ensure only nifti and/or npy files are included?
+        # self.shapes = [load_npy(os.path.join(im_dir, im), as_memmap=True).shape for im in self.imgs]
+        # to keep things as simple and close to the PatchDataset example, assume all files have same shape
+        shape = load_npy(os.path.join(im_dir, self.imgs[0]), as_memmap=True)'''
+
