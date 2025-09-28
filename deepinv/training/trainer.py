@@ -378,7 +378,7 @@ class Trainer:
 
         if train:
             self.loss_history = []
-        self.save_folder_im = f"{self.save_path}/images"
+        self.save_folder_im = None
 
         _ = self.load_model()
 
