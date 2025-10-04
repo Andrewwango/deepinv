@@ -875,6 +875,14 @@ class Trainer:
             else:
                 x_nl = None
 
+            if len(x.shape) == 5: # N, C, H, W, D
+                if y.shape == x.shape: # else y would be ignored anyways
+                    y = y[:, :, :, y.shape[-1] // 2]
+                x = x[:, :, :, :, x.shape[-1] // 2]
+                x_net = x_net[:, :, :, :, x.shape[-1] // 2]
+                if x_nl:
+                    x_nl = x_nl[:, :, :, :, x_nl.shape[-1] // 2]
+
             imgs, titles, grid_image, caption = prepare_images(
                 x, y=y, x_net=x_net, x_nl=x_nl, rescale_mode=self.rescale_mode
             )
