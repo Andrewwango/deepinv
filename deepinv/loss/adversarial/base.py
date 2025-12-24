@@ -102,7 +102,7 @@ class AdversarialLoss(Loss):
         self.optimizer_D = optimizer_D
         self.scheduler_D = scheduler_D
         self.num_D_steps = num_D_steps
-        if optimizer_D is None and scheduler_D is not None:
+        if optimizer_D is None and scheduler_D is not None:  # pragma: no cover
             raise ValueError(
                 "Discriminator scheduler requires discriminator optimizer to be passed."
             )
@@ -121,7 +121,7 @@ class AdversarialLoss(Loss):
         pred_fake = self.D(fake)
         return self.metric_gan(pred_fake, real=True) * self.weight_adv
 
-    def adversarial_discrim(self, real: Tensor, fake: Tensor):
+    def adversarial_discrim(self, real: Tensor, fake: Tensor) -> torch.Tensor:
         r"""Adversarial penalty mechanism in GAN discriminators.
 
         :param torch.Tensor real: image labelled as real, typically one originating from training set
@@ -134,10 +134,10 @@ class AdversarialLoss(Loss):
         adv_loss_real = self.metric_gan(pred_real, real=True)
         adv_loss_fake = self.metric_gan(pred_fake, real=False)
 
-        return (adv_loss_real + adv_loss_fake) * self.weight_adv
+        return adv_loss_real + adv_loss_fake
 
     @contextmanager
-    def step_discrim(self, model: nn.Module = None):
+    def step_discrim(self, model: nn.Module):
         """
         Context manager that steps discriminator optimizer
         that wraps a loss calculation.
@@ -159,7 +159,7 @@ class AdversarialLoss(Loss):
             def backward(loss: torch.Tensor):
                 if model.training:
                     self.log_loss_D_train.update(loss.item())
-                    loss.backward(retain_graph=True)
+                    loss.backward()
                 else:
                     self.log_loss_D_eval.update(loss.item())
 
@@ -194,7 +194,12 @@ class AdversarialLoss(Loss):
         """
         raise NotImplementedError()
 
-    def load_model(self, filename, device=None, strict: bool = True) -> dict:
+    def load_model(
+        self,
+        filename: str | Path,
+        device: torch.device | str = None,
+        strict: bool = True,
+    ) -> dict:
         """Load discriminator from checkpoint.
 
         :param str, pathlib.Path filename: checkpoint filename.
