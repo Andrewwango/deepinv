@@ -176,7 +176,7 @@ dinv.utils.plot(
 )
 
 # %%
-# For the full benchmark, use the dataset to load these measurements and process them using `deepinv.test`.
+# For the full benchmark, use the :class:`deepinv.datasets.DeteCTDataset` to load these measurements and process them using `deepinv.test`.
 #
 # .. tip::
 #     For the demo, we do not download anymore data. For the official benchmark, download the full test set yourself by downloading and extracting
