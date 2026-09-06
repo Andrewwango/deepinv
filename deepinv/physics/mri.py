@@ -327,7 +327,7 @@ class MultiCoilMRI(MRIMixin, LinearPhysics):
         self, y: Tensor, mask: Tensor = None, coil_maps: Tensor = None, **kwargs
     ) -> Tensor:
         r"""
-        Computes least squares solution to the MRI inverse problem, as proposed in `SENSE: Sensitivity encoding for fast MRI <https://doi.org/10.1002/(SICI)1522-2594(199911)42:5%3C952::AID-MRM16%3E3.0.CO;2-S>`_.
+        Computes least squares solution to the MRI inverse problem, as proposed in :footcite:t:`pruessmann1999sense`.
 
         By default uses conjugate gradient solver. Overwrite default solver arguments by passing `kwargs`. See :func:`deepinv.optim.linear.least_squares` for details.
 
@@ -424,7 +424,7 @@ class MultiCoilMRI(MRIMixin, LinearPhysics):
     ) -> Tensor:
         """Estimate coil sensitivity maps using ESPIRiT.
 
-        This was proposed in `ESPIRiT — An Eigenvalue Approach to Autocalibrating Parallel MRI: Where SENSE meets GRAPPA <https://onlinelibrary.wiley.com/doi/10.1002/mrm.24751>`_.
+        This was proposed in :footcite:t:`uecker2013espirit`.
 
         Note this uses a suboptimal undifferentiable unbatched implementation provided by `sigpy`.
 

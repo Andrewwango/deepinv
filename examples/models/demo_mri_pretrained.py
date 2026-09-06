@@ -91,7 +91,7 @@ dinv.utils.plot(
 # ----------------------------------
 #
 # We use a 5x accelerated multicoil Calgary-Campinas brain test volume with no ground truth,
-# with :class:`deepinv.datasets.CalgarySliceDataset`, which loads undersampled y, mask (Poisson-disk), and estimated coil maps using ESPIRiT.
+# with :class:`deepinv.datasets.CalgarySliceDataset`, which loads undersampled y, mask (Poisson-disk), and estimated coil maps using ESPIRiT :footcite:p:`uecker2013espirit`.
 # Take a single slice for the demo, and construct a 2D :class:`deepinv.physics.MultiCoilMRI` physics.
 
 dinv.datasets.download_archive(
@@ -119,6 +119,13 @@ dinv.utils.plot(
 # %%
 # Perform reconstruction with pretrained models.
 # Note that vSHARP and Joint-ICNet (TODO CITE) estimate coil maps internally, whereas RAM uses the ESPIRiT maps.
+#
+# .. note::
+#     ESPIRiT estimates coil maps with arbitrary phase per pixel, because the phases are unconstrained, leading to low spatial correlation.
+#     Even though RAM is not trained on multicoil MRI, it performs better when the phase maps are also smooth. We use
+#     `physics.phase_correct_maps` to constrain the phases to a smooth map, improving performance.
+#
+# Again, the baselines are zero-filled reconstruction, as well as the least-squares conjugate-gradient SENSE :footcite:p:`pruessmann1999sense`.
 
 vsharp = dinv.models.DIRECTModel(
     model_name="vsharp_brain", pretrained=True, device=device
@@ -134,7 +141,8 @@ with torch.no_grad():
     x_vsharp = vsharp(y, physics).cpu()
     x_jointicnet = jointicnet(y, physics).cpu()
 
-    physics.phase_correct_maps(x_zf)
+    coil_maps = physics.phase_correct_maps(x_zf)
+    physics.update(coil_maps=coil_maps)
     x_ram = ram(y / x_zf.max(), physics).cpu() * x_zf.max()
 
 dinv.utils.plot(
