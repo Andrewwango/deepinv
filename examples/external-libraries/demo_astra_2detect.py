@@ -51,7 +51,10 @@ det_pix *= scale
 
 angles = -torch.linspace(0, 2 * torch.pi, 3600 + 1)[:-1] + torch.pi
 
-# For sparse-view projection geometry, simply downsample angles:
+# %%
+# For sparse-view projection geometry, simply downsample angles. Here, we use 360 angles i.e. 10x acceleration;
+# you can decrease the number of angles to make the problem more challenging.
+
 n_angles = 360
 proj_geom = astra.create_proj_geom(
     "cone",
@@ -165,7 +168,8 @@ physics.update(sigma=0.01 / model.scaling, gain=0.003 / model.scaling)
 with torch.no_grad():
     x_ram = model(y, physics)
 
-# Plot (rescale by FBP max to visualise intensities on same scale, and clip 0-1.)
+# %%
+# Plot. First rescale by FBP max , and clip 0-1, such that image intensities are visualised on same scale.
 dinv.utils.plot(
     {
         "Sparse-view sino": y / y.max(),
@@ -173,18 +177,14 @@ dinv.utils.plot(
         "RAM": x_ram / x_fbp.max(),
     },
     rescale_mode="clip",
+    figsize=(12,3)
 )
 
+
 # %%
-# For the full benchmark, use the :class:`deepinv.datasets.DeteCTDataset` to load these measurements and process them using `deepinv.test`.
-#
-# .. tip::
-#     For the demo, we do not download anymore data. For the official benchmark, download the full test set yourself by downloading and extracting
-#     from `Zenodo <https://zenodo.org/records/8014874>`_ (and reference reconstructions `here <https://zenodo.org/records/8017624>`_).
-#
-# .. note::
-#     Here, ground truth = a proprietary reconstruction using all angles. Since it's arbitrary scale, we use PSNR after standardizing to its scale.
-#     Similarly, FBP and RAM have different visual intensities since `min_max` rescale mode is used for plotting.
+# The :class:`deepinv.datasets.DeteCTDataset` class can be used to load `x, y`, where `y` are the already-preprocessed sinograms as above,
+# and `x` is a ground truth i.e. a proprietary reconstruction using all angles. Since `x` is on an arbitrary scale, we use PSNR after standardizing to its scale.
+# The dataset finds all samples in the local directory matching the test slice IDs. Here, since only downloaded one slice, it uses the same as above.
 #
 
 dataset = dinv.datasets.DeteCTDataset(
@@ -192,6 +192,41 @@ dataset = dinv.datasets.DeteCTDataset(
 )
 
 metric = dinv.metric.PSNR(max_pixel=None, norm_inputs="standardize")
+
+x, y = next(iter(torch.utils.data.DataLoader(dataset)))
+x, y = x.to(device), y.to(device)
+with torch.no_grad():
+    x_fbp = fbp(y, physics)
+    x_ram = model(y, physics)
+
+dinv.utils.plot(
+    {
+        "All angles recon": x / x_fbp.max(),
+        "Sparse-view sino": y / y.max(),
+        "FBP": x_fbp / x_fbp.max(),
+        "RAM": x_ram / x_fbp.max(),
+    },
+    subtitles=["", "",
+        f"PSNR: {metric(x_fbp, x).item():.2f}",
+        f"PSNR: {metric(x_ram, x).item():.2f}"
+    ],
+    rescale_mode="clip",
+    figsize=(12,3)
+)
+
+# %%
+# Use the full benchmark
+# ----------------------
+# For the full benchmark, use :class:`deepinv.datasets.DeteCTDataset` and process them using :func:`deepinv.test`.
+# This tests the algorithm on all samples of the test set, and the PSNR and SSIM results should be comparable to those reported in the benchmark in :footcite:t:`kiss2025benchmarking`.
+#
+# .. tip::
+#     For the demo, we do not download anymore data. For the official benchmark, download the full test set yourself by downloading and extracting
+#     from `Zenodo <https://zenodo.org/records/8014874>`_ (and reference reconstructions `here <https://zenodo.org/records/8017624>`_).
+#
+# .. note::
+#     :func:`deepinv.test` does not do any manual rescaling, so we use `min_max` rescale mode for plotting. Therefore, FBP and RAM appear with different visual intensities.
+#
 
 dinv.test(
     model,
@@ -209,8 +244,9 @@ dinv.test(
 # Limited-angle CT reconstruction
 # -------------------------------
 # The same 2DeteCT dataset can be used also for limited-angle CT reconstruction.
-# The physics reuses all other parameters, except different angles: we take the first 30% of angles,
-# defining a limited angle wedge.
+# The physics reuses all other parameters, except different angles: we take here the first 1200 angles,
+# defining a limited angle (120 degrees) wedge. You can decrease the number of angles to define smaller wedges,
+# which makes the problem more challenging.
 #
 # Like before, we'll show how to reconstruct a single acquisition vs. test a full dataset.
 #
@@ -247,20 +283,17 @@ dinv.utils.plot(
         "FBP": x_fbp / x_fbp.max(),
         "RAM": x_ram / x_fbp.max(),
     },
+    subtitles=["", "",
+        f"PSNR: {metric(x_fbp, x).item():.2f}",
+        f"PSNR: {metric(x_ram, x).item():.2f}"
+    ],
     rescale_mode="clip",
+    figsize=(12,3)
 )
 
-dinv.test(
-    model,
-    torch.utils.data.DataLoader(torch.utils.data.Subset(dataset, range(1))),
-    physics,
-    metrics=metric,
-    device=device,
-    plot_images=True,
-    rescale_mode="min_max",
-    no_learning_method="A_dagger",
-)
-
+# %%
+# Note that, similar above, you can also use :func:`deepinv.test` to test the model on the full test dataset.
+# The results on the test set should then be comparable to those reported in the benchmark in :footcite:t:`kiss2025benchmarking`.
 
 # %%
 # Low-dose CT reconstruction
@@ -304,19 +337,16 @@ dinv.utils.plot(
         "FBP": x_fbp / x_fbp.max(),
         "RAM": x_ram / x_fbp.max(),
     },
+    subtitles=["", "",
+        f"PSNR: {metric(x_fbp, x).item():.2f}",
+        f"PSNR: {metric(x_ram, x).item():.2f}"
+    ],
     rescale_mode="clip",
+    figsize=(12,3)
 )
-
-dinv.test(
-    model,
-    torch.utils.data.DataLoader(torch.utils.data.Subset(dataset, range(1))),
-    physics,
-    metrics=metric,
-    device=device,
-    plot_images=True,
-    rescale_mode="min_max",
-    no_learning_method="A_dagger",
-)
+# %%
+# Similarly you can also use :func:`deepinv.test` to test the model on the full low-dose test dataset.
+# The results on the test set should then be comparable to those reported in the benchmark in :footcite:t:`kiss2025benchmarking`.
 
 # %%
 # :References:
